@@ -77,4 +77,327 @@ describe("rule engine (v1)", () => {
 
         expect(results[0]?.passed).toBe(true);
     });
+
+    it("composite OR passes when at least one child matches", () => {
+        const rules: SpecialRule[] = [
+            {
+                id: "r-or",
+                type: "composite",
+                constraint: "MUST_HAVE",
+                message: "must have either a or b",
+                params: {
+                    op: "OR",
+                    rules: [
+                        {
+                            id: "a",
+                            type: "includes",
+                            constraint: "MUST_HAVE",
+                            message: "a",
+                            params: { needle: "aaa" },
+                        },
+                        {
+                            id: "b",
+                            type: "includes",
+                            constraint: "MUST_HAVE",
+                            message: "b",
+                            params: { needle: "bbb" },
+                        },
+                    ],
+                },
+            },
+        ];
+
+        const results = evaluateRules(rules, {
+            language: "javascript",
+            sourceText: "const x = 'bbb';",
+        });
+
+        expect(results[0]?.passed).toBe(true);
+    });
+
+    it("MUST_NOT_HAVE includes fails when needle exists", () => {
+        const rules: SpecialRule[] = [
+            {
+                id: "r-no",
+                type: "includes",
+                constraint: "MUST_NOT_HAVE",
+                message: "must not include eval",
+                params: { needle: "eval" },
+            },
+        ];
+
+        const results = evaluateRules(rules, {
+            language: "javascript",
+            sourceText: "eval('1+1');",
+        });
+
+        expect(results[0]?.passed).toBe(false);
+    });
+
+    it("invalid regex reports failure reason and obeys constraint", () => {
+        const rules: SpecialRule[] = [
+            {
+                id: "r-bad",
+                type: "regex",
+                constraint: "MUST_HAVE",
+                message: "broken regex should fail",
+                params: { pattern: "[" },
+            },
+        ];
+
+        const results = evaluateRules(rules, {
+            language: "javascript",
+            sourceText: "const x = 1;",
+        });
+
+        expect(results[0]?.passed).toBe(false);
+        expect(results[0]?.reason).toMatch(/invalid regex/i);
+    });
+
+    type Case = {
+        name: string;
+        rule: SpecialRule;
+        ctx: { language: string; sourceText: string };
+        expectedPassed: boolean;
+    };
+
+    // Coverage matrix: (type × constraint)
+    // - includes: MUST_HAVE/MUST_NOT_HAVE
+    // - regex: MUST_HAVE/MUST_NOT_HAVE
+    // - composite: MUST_HAVE/MUST_NOT_HAVE (composite matcher ignores child constraints; evaluator applies only top-level constraint)
+    const cases: Case[] = [
+        {
+            name: "includes + MUST_HAVE: passes when present",
+            rule: {
+                id: "inc-have-pass",
+                type: "includes",
+                constraint: "MUST_HAVE",
+                message: "",
+                params: { needle: "printf" },
+            },
+            ctx: { language: "c", sourceText: "int main(){ printf(\"hi\"); }" },
+            expectedPassed: true,
+        },
+        {
+            name: "includes + MUST_HAVE: fails when missing",
+            rule: {
+                id: "inc-have-fail",
+                type: "includes",
+                constraint: "MUST_HAVE",
+                message: "",
+                params: { needle: "printf" },
+            },
+            ctx: { language: "c", sourceText: "int main(){ return 0; }" },
+            expectedPassed: false,
+        },
+        {
+            name: "includes + MUST_NOT_HAVE: passes when missing",
+            rule: {
+                id: "inc-not-pass",
+                type: "includes",
+                constraint: "MUST_NOT_HAVE",
+                message: "",
+                params: { needle: "eval" },
+            },
+            ctx: { language: "javascript", sourceText: "const x = 1;" },
+            expectedPassed: true,
+        },
+        {
+            name: "includes + MUST_NOT_HAVE: fails when present",
+            rule: {
+                id: "inc-not-fail",
+                type: "includes",
+                constraint: "MUST_NOT_HAVE",
+                message: "",
+                params: { needle: "eval" },
+            },
+            ctx: { language: "javascript", sourceText: "eval('1+1');" },
+            expectedPassed: false,
+        },
+
+        {
+            name: "regex + MUST_HAVE: passes when matches",
+            rule: {
+                id: "re-have-pass",
+                type: "regex",
+                constraint: "MUST_HAVE",
+                message: "",
+                params: { pattern: "\\bwhile\\b" },
+            },
+            ctx: { language: "c", sourceText: "while(1){}" },
+            expectedPassed: true,
+        },
+        {
+            name: "regex + MUST_HAVE: fails when not matched",
+            rule: {
+                id: "re-have-fail",
+                type: "regex",
+                constraint: "MUST_HAVE",
+                message: "",
+                params: { pattern: "\\bfor\\b" },
+            },
+            ctx: { language: "c", sourceText: "while(1){}" },
+            expectedPassed: false,
+        },
+        {
+            name: "regex + MUST_NOT_HAVE: passes when not matched",
+            rule: {
+                id: "re-not-pass",
+                type: "regex",
+                constraint: "MUST_NOT_HAVE",
+                message: "",
+                params: { pattern: "\\bfor\\b" },
+            },
+            ctx: { language: "c", sourceText: "while(1){}" },
+            expectedPassed: true,
+        },
+        {
+            name: "regex + MUST_NOT_HAVE: fails when matches",
+            rule: {
+                id: "re-not-fail",
+                type: "regex",
+                constraint: "MUST_NOT_HAVE",
+                message: "",
+                params: { pattern: "\\bfor\\b" },
+            },
+            ctx: { language: "c", sourceText: "for(;;){}" },
+            expectedPassed: false,
+        },
+
+        {
+            name: "composite(AND) + MUST_HAVE: passes when all children match",
+            rule: {
+                id: "cmp-and-have-pass",
+                type: "composite",
+                constraint: "MUST_HAVE",
+                message: "",
+                params: {
+                    op: "AND",
+                    rules: [
+                        { id: "a", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "aaa" } },
+                        { id: "b", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "bbb" } },
+                    ],
+                },
+            },
+            ctx: { language: "javascript", sourceText: "const s = 'aaa bbb';" },
+            expectedPassed: true,
+        },
+        {
+            name: "composite(AND) + MUST_HAVE: fails when a child is missing",
+            rule: {
+                id: "cmp-and-have-fail",
+                type: "composite",
+                constraint: "MUST_HAVE",
+                message: "",
+                params: {
+                    op: "AND",
+                    rules: [
+                        { id: "a", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "aaa" } },
+                        { id: "b", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "bbb" } },
+                    ],
+                },
+            },
+            ctx: { language: "javascript", sourceText: "const s = 'aaa';" },
+            expectedPassed: false,
+        },
+        {
+            name: "composite(OR) + MUST_NOT_HAVE: passes when no child matches",
+            rule: {
+                id: "cmp-or-not-pass",
+                type: "composite",
+                constraint: "MUST_NOT_HAVE",
+                message: "",
+                params: {
+                    op: "OR",
+                    rules: [
+                        { id: "a", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "aaa" } },
+                        { id: "b", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "bbb" } },
+                    ],
+                },
+            },
+            ctx: { language: "javascript", sourceText: "const s = 'ccc';" },
+            expectedPassed: true,
+        },
+        {
+            name: "composite(OR) + MUST_NOT_HAVE: fails when any child matches",
+            rule: {
+                id: "cmp-or-not-fail",
+                type: "composite",
+                constraint: "MUST_NOT_HAVE",
+                message: "",
+                params: {
+                    op: "OR",
+                    rules: [
+                        { id: "a", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "aaa" } },
+                        { id: "b", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "bbb" } },
+                    ],
+                },
+            },
+            ctx: { language: "javascript", sourceText: "const s = 'bbb';" },
+            expectedPassed: false,
+        },
+    ];
+
+    it.each(cases)("matrix: $name", ({ rule, ctx, expectedPassed }) => {
+        const [result] = evaluateRules([rule], ctx);
+        expect(result?.passed).toBe(expectedPassed);
+    });
+
+    it("nested composite works (AND containing OR)", () => {
+        const rule: SpecialRule = {
+            id: "nested",
+            type: "composite",
+            constraint: "MUST_HAVE",
+            message: "",
+            params: {
+                op: "AND",
+                rules: [
+                    {
+                        id: "outer-a",
+                        type: "includes",
+                        constraint: "MUST_HAVE",
+                        message: "",
+                        params: { needle: "aaa" },
+                    },
+                    {
+                        id: "outer-or",
+                        type: "composite",
+                        constraint: "MUST_HAVE",
+                        message: "",
+                        params: {
+                            op: "OR",
+                            rules: [
+                                {
+                                    id: "b",
+                                    type: "includes",
+                                    constraint: "MUST_HAVE",
+                                    message: "",
+                                    params: { needle: "bbb" },
+                                },
+                                {
+                                    id: "c",
+                                    type: "includes",
+                                    constraint: "MUST_HAVE",
+                                    message: "",
+                                    params: { needle: "ccc" },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        };
+
+        const [resultPass] = evaluateRules([rule], {
+            language: "javascript",
+            sourceText: "const s = 'aaa ccc';",
+        });
+        expect(resultPass?.passed).toBe(true);
+
+        const [resultFail] = evaluateRules([rule], {
+            language: "javascript",
+            sourceText: "const s = 'aaa ddd';",
+        });
+        expect(resultFail?.passed).toBe(false);
+    });
 });

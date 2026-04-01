@@ -8,6 +8,7 @@ import type {
 } from "../types";
 import { defaultSourceNormalizer } from "../normalize/registry";
 import {
+    compositeMatcher,
     includesMatcher,
     regexMatcher,
     type CompositeParams,
@@ -18,6 +19,7 @@ import {
 const matcherByType: Record<string, RuleMatcher<any>> = {
     includes: includesMatcher,
     regex: regexMatcher,
+    composite: compositeMatcher,
 };
 
 function applyConstraint(constraint: SpecialRule["constraint"], matched: boolean): boolean {
@@ -25,30 +27,12 @@ function applyConstraint(constraint: SpecialRule["constraint"], matched: boolean
 }
 
 function matchRule(rule: SpecialRule, input: { language: string; text: string }): MatchResult {
-    if (rule.type === "composite") {
-        const params = rule.params as CompositeParams;
-        if (!params || (params.op !== "AND" && params.op !== "OR") || !Array.isArray(params.rules)) {
-            return { matched: false, reason: "composite: params must be { op: AND|OR, rules: SpecialRule[] }" };
-        }
-
-        const childMatches = params.rules.map((child) => matchRule(child, input));
-        const matched =
-            params.op === "AND"
-                ? childMatches.every((r) => r.matched)
-                : childMatches.some((r) => r.matched);
-
-        return {
-            matched,
-            reason: `composite(${params.op}): ${childMatches.map((r) => (r.matched ? "T" : "F")).join(",")}`,
-        };
-    }
-
     const matcher = matcherByType[rule.type];
     if (!matcher) {
         return { matched: false, reason: `unknown rule type: ${rule.type}` };
     }
 
-    return matcher.match(rule.params as IncludesParams | RegexParams, input);
+    return matcher.match(rule.params as IncludesParams | RegexParams | CompositeParams, input);
 }
 
 export function evaluateRule(

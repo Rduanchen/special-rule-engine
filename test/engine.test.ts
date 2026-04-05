@@ -3,14 +3,14 @@ import type { SpecialRule } from "../src/types";
 import { evaluateRules } from "../src/engine";
 
 describe("rule engine (v1)", () => {
-    it("MUST_HAVE includes passes when needle exists", () => {
+    it("MUST_HAVE use passes when target exists", () => {
         const rules: SpecialRule[] = [
             {
                 id: "r1",
-                type: "includes",
+                type: "use",
                 constraint: "MUST_HAVE",
                 message: "must include printf",
-                params: { needle: "printf" },
+                params: { target: "printf" },
             },
         ];
 
@@ -53,17 +53,17 @@ describe("rule engine (v1)", () => {
                     rules: [
                         {
                             id: "a",
-                            type: "includes",
+                            type: "use",
                             constraint: "MUST_HAVE",
                             message: "a",
-                            params: { needle: "aaa" },
+                            params: { target: "aaa" },
                         },
                         {
                             id: "b",
-                            type: "includes",
+                            type: "use",
                             constraint: "MUST_HAVE",
                             message: "b",
-                            params: { needle: "bbb" },
+                            params: { target: "bbb" },
                         },
                     ],
                 },
@@ -90,17 +90,17 @@ describe("rule engine (v1)", () => {
                     rules: [
                         {
                             id: "a",
-                            type: "includes",
+                            type: "use",
                             constraint: "MUST_HAVE",
                             message: "a",
-                            params: { needle: "aaa" },
+                            params: { target: "aaa" },
                         },
                         {
                             id: "b",
-                            type: "includes",
+                            type: "use",
                             constraint: "MUST_HAVE",
                             message: "b",
-                            params: { needle: "bbb" },
+                            params: { target: "bbb" },
                         },
                     ],
                 },
@@ -115,14 +115,14 @@ describe("rule engine (v1)", () => {
         expect(results[0]?.passed).toBe(true);
     });
 
-    it("MUST_NOT_HAVE includes fails when needle exists", () => {
+    it("MUST_NOT_HAVE use fails when target exists", () => {
         const rules: SpecialRule[] = [
             {
                 id: "r-no",
-                type: "includes",
+                type: "use",
                 constraint: "MUST_NOT_HAVE",
                 message: "must not include eval",
-                params: { needle: "eval" },
+                params: { target: "eval" },
             },
         ];
 
@@ -170,10 +170,10 @@ describe("rule engine (v1)", () => {
             name: "includes + MUST_HAVE: passes when present",
             rule: {
                 id: "inc-have-pass",
-                type: "includes",
+                type: "use",
                 constraint: "MUST_HAVE",
                 message: "",
-                params: { needle: "printf" },
+                params: { target: "printf" },
             },
             ctx: { language: "c", sourceText: "int main(){ printf(\"hi\"); }" },
             expectedPassed: true,
@@ -182,10 +182,10 @@ describe("rule engine (v1)", () => {
             name: "includes + MUST_HAVE: fails when missing",
             rule: {
                 id: "inc-have-fail",
-                type: "includes",
+                type: "use",
                 constraint: "MUST_HAVE",
                 message: "",
-                params: { needle: "printf" },
+                params: { target: "printf" },
             },
             ctx: { language: "c", sourceText: "int main(){ return 0; }" },
             expectedPassed: false,
@@ -194,10 +194,10 @@ describe("rule engine (v1)", () => {
             name: "includes + MUST_NOT_HAVE: passes when missing",
             rule: {
                 id: "inc-not-pass",
-                type: "includes",
+                type: "use",
                 constraint: "MUST_NOT_HAVE",
                 message: "",
-                params: { needle: "eval" },
+                params: { target: "eval" },
             },
             ctx: { language: "javascript", sourceText: "const x = 1;" },
             expectedPassed: true,
@@ -206,10 +206,10 @@ describe("rule engine (v1)", () => {
             name: "includes + MUST_NOT_HAVE: fails when present",
             rule: {
                 id: "inc-not-fail",
-                type: "includes",
+                type: "use",
                 constraint: "MUST_NOT_HAVE",
                 message: "",
-                params: { needle: "eval" },
+                params: { target: "eval" },
             },
             ctx: { language: "javascript", sourceText: "eval('1+1');" },
             expectedPassed: false,
@@ -274,8 +274,8 @@ describe("rule engine (v1)", () => {
                 params: {
                     op: "AND",
                     rules: [
-                        { id: "a", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "aaa" } },
-                        { id: "b", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "bbb" } },
+                        { id: "a", type: "use", constraint: "MUST_HAVE", message: "", params: { target: "aaa" } },
+                        { id: "b", type: "use", constraint: "MUST_HAVE", message: "", params: { target: "bbb" } },
                     ],
                 },
             },
@@ -292,8 +292,8 @@ describe("rule engine (v1)", () => {
                 params: {
                     op: "AND",
                     rules: [
-                        { id: "a", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "aaa" } },
-                        { id: "b", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "bbb" } },
+                        { id: "a", type: "use", constraint: "MUST_HAVE", message: "", params: { target: "aaa" } },
+                        { id: "b", type: "use", constraint: "MUST_HAVE", message: "", params: { target: "bbb" } },
                     ],
                 },
             },
@@ -310,8 +310,8 @@ describe("rule engine (v1)", () => {
                 params: {
                     op: "OR",
                     rules: [
-                        { id: "a", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "aaa" } },
-                        { id: "b", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "bbb" } },
+                        { id: "a", type: "use", constraint: "MUST_HAVE", message: "", params: { target: "aaa" } },
+                        { id: "b", type: "use", constraint: "MUST_HAVE", message: "", params: { target: "bbb" } },
                     ],
                 },
             },
@@ -328,8 +328,8 @@ describe("rule engine (v1)", () => {
                 params: {
                     op: "OR",
                     rules: [
-                        { id: "a", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "aaa" } },
-                        { id: "b", type: "includes", constraint: "MUST_HAVE", message: "", params: { needle: "bbb" } },
+                        { id: "a", type: "use", constraint: "MUST_HAVE", message: "", params: { target: "aaa" } },
+                        { id: "b", type: "use", constraint: "MUST_HAVE", message: "", params: { target: "bbb" } },
                     ],
                 },
             },
@@ -354,10 +354,10 @@ describe("rule engine (v1)", () => {
                 rules: [
                     {
                         id: "outer-a",
-                        type: "includes",
+                        type: "use",
                         constraint: "MUST_HAVE",
                         message: "",
-                        params: { needle: "aaa" },
+                        params: { target: "aaa" },
                     },
                     {
                         id: "outer-or",
@@ -369,17 +369,17 @@ describe("rule engine (v1)", () => {
                             rules: [
                                 {
                                     id: "b",
-                                    type: "includes",
+                                    type: "use",
                                     constraint: "MUST_HAVE",
                                     message: "",
-                                    params: { needle: "bbb" },
+                                    params: { target: "bbb" },
                                 },
                                 {
                                     id: "c",
-                                    type: "includes",
+                                    type: "use",
                                     constraint: "MUST_HAVE",
                                     message: "",
-                                    params: { needle: "ccc" },
+                                    params: { target: "ccc" },
                                 },
                             ],
                         },

@@ -1,23 +1,35 @@
 import type { MatchResult, RuleMatcher, SpecialRule } from "../types.js";
 
-export type IncludesParams = { needle: string; caseSensitive?: boolean };
+export type UseParams = { target: string; caseSensitive?: boolean };
 export type RegexParams = { pattern: string; flags?: string };
 export type CompositeParams = { op: "AND" | "OR"; rules: SpecialRule[] };
 
-export const includesMatcher: RuleMatcher<IncludesParams> = {
-    type: "includes",
+function normalizeUseParams(params: any): { target: string; caseSensitive?: boolean } | null {
+    if (!params || typeof params !== "object") return null;
+
+    // New name
+    if (typeof (params as any).target === "string") {
+        return { target: (params as any).target, caseSensitive: (params as any).caseSensitive };
+    }
+
+    return null;
+}
+
+export const useMatcher: RuleMatcher<UseParams> = {
+    type: "use",
     match(params, input): MatchResult {
-        if (!params || typeof params.needle !== "string") {
-            return { matched: false, reason: "includes: params.needle must be a string" };
+        const normalized = normalizeUseParams(params);
+        if (!normalized || typeof normalized.target !== "string") {
+            return { matched: false, reason: "use: params.target must be a string" };
         }
 
-        const haystack = params.caseSensitive ? input.text : input.text.toLowerCase();
-        const needle = params.caseSensitive ? params.needle : params.needle.toLowerCase();
+        const haystack = normalized.caseSensitive ? input.text : input.text.toLowerCase();
+        const target = normalized.caseSensitive ? normalized.target : normalized.target.toLowerCase();
         return {
-            matched: haystack.includes(needle),
-            reason: haystack.includes(needle)
-                ? `includes: found '${params.needle}'`
-                : `includes: missing '${params.needle}'`,
+            matched: haystack.includes(target),
+            reason: haystack.includes(target)
+                ? `use: found '${normalized.target}'`
+                : `use: missing '${normalized.target}'`,
         };
     },
 };
@@ -50,8 +62,8 @@ function matchChildRule(child: SpecialRule, input: { language: string; text: str
         return compositeMatcher.match(child.params as CompositeParams, input);
     }
 
-    if (child.type === "includes") {
-        return includesMatcher.match(child.params as IncludesParams, input);
+    if (child.type === "use") {
+    return useMatcher.match(child.params as UseParams, input);
     }
 
     if (child.type === "regex") {

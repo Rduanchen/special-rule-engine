@@ -9,15 +9,15 @@ import type {
 import { defaultSourceNormalizer } from "../normalize/registry.js";
 import {
     compositeMatcher,
-    includesMatcher,
     regexMatcher,
+    useMatcher,
     type CompositeParams,
-    type IncludesParams,
+    type UseParams,
     type RegexParams,
 } from "./matchers.js";
 
 const matcherByType: Record<string, RuleMatcher<any>> = {
-    includes: includesMatcher,
+    use: useMatcher,
     regex: regexMatcher,
     composite: compositeMatcher,
 };
@@ -32,7 +32,7 @@ function matchRule(rule: SpecialRule, input: { language: string; text: string })
         return { matched: false, reason: `unknown rule type: ${rule.type}` };
     }
 
-    return matcher.match(rule.params as IncludesParams | RegexParams | CompositeParams, input);
+    return matcher.match(rule.params as UseParams | RegexParams | CompositeParams, input);
 }
 
 export function evaluateRule(

@@ -1,1 +1,1 @@
-export * from "./normalize/index";
+export * from "./normalize/index.js";

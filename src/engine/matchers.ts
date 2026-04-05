@@ -1,4 +1,4 @@
-import type { MatchResult, RuleMatcher, SpecialRule } from "../types";
+import type { MatchResult, RuleMatcher, SpecialRule } from "../types.js";
 
 export type IncludesParams = { needle: string; caseSensitive?: boolean };
 export type RegexParams = { pattern: string; flags?: string };

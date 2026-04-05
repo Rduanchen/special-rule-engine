@@ -1,4 +1,4 @@
-import { normalizeNewlines } from "./newlineNormalizer";
+import { normalizeNewlines } from "./newlineNormalizer.js";
 
 export function stripCLikeComments(sourceText: string): string {
     // Best-effort stripping that does NOT understand string literals.

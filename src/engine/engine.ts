@@ -5,8 +5,8 @@ import type {
     RuleMatcher,
     SpecialRule,
     SourceNormalizer,
-} from "../types";
-import { defaultSourceNormalizer } from "../normalize/registry";
+} from "../types.js";
+import { defaultSourceNormalizer } from "../normalize/registry.js";
 import {
     compositeMatcher,
     includesMatcher,
@@ -14,7 +14,7 @@ import {
     type CompositeParams,
     type IncludesParams,
     type RegexParams,
-} from "./matchers";
+} from "./matchers.js";
 
 const matcherByType: Record<string, RuleMatcher<any>> = {
     includes: includesMatcher,

@@ -1,6 +1,6 @@
-import type { SourceNormalizer } from "../types";
-import { normalizeNewlines } from "./newlineNormalizer";
-import { stripCLikeComments, stripPythonLineComments } from "./commentStrippers";
+import type { SourceNormalizer } from "../types.js";
+import { normalizeNewlines } from "./newlineNormalizer.js";
+import { stripCLikeComments, stripPythonLineComments } from "./commentStrippers.js";
 
 const cLikeLanguages = new Set([
     "c",

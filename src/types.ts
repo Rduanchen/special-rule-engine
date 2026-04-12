@@ -1,7 +1,7 @@
 export type RuleConstraint = "MUST_HAVE" | "MUST_NOT_HAVE";
 
 // NOTE: `includes` is legacy. Prefer `use`.
-export type SpecialRuleType = "regex" | "use" | "composite";
+export type SpecialRuleType = "regex" | "use" | "nestedLoop" | "composite";
 
 export type SpecialRuleSeverity = "info" | "warn";
 

@@ -14,12 +14,14 @@ import {
     type CompositeParams,
     type UseParams,
     type RegexParams,
+    nestedLoopMatcher,
 } from "./matchers.js";
 
 const matcherByType: Record<string, RuleMatcher<any>> = {
     use: useMatcher,
     regex: regexMatcher,
     composite: compositeMatcher,
+    nestedLoop: nestedLoopMatcher
 };
 
 function applyConstraint(constraint: SpecialRule["constraint"], matched: boolean): boolean {

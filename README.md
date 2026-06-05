@@ -13,6 +13,15 @@ A small, pure-TypeScript rule evaluation engine for NTUT Exam System.
 ```bash
 npm install git+https://github.com/VerechoTJI/special-rule-engine.git
 ```
+**Note**:
+if you are using pnpm you should add the following script in your package
+```json
+"pnpm": {
+    "onlyBuiltDependencies": [
+      "special-rule-engine"
+    ]
+  }
+```
 
 ## Rule types (v1)
 
